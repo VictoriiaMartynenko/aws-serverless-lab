@@ -7,33 +7,41 @@ const replaceAll = (str, find, replace) => {
 };
 
 exports.handler = async (event) => {
-  const id = replaceAll(event.title, " ", "-").toLowerCase();
+  const body = JSON.parse(event.body);
 
-  const course = {
-    id: { S: id },
-    title: { S: event.title },
-    watchHref: { S: `http://www.pluralsight.com/courses/${id}` },
-    authorId: { S: event.authorId },
-    length: { S: event.length },
-    category: { S: event.category }
-  };
+  const id = replaceAll(body.title, " ", "-").toLowerCase();
 
-  const command = new PutItemCommand({
+  const params = {
     TableName: "cloudtech-dev-courses",
-    Item: course
-  });
-
-  await client.send(command);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      id: id,
-      title: event.title,
-      watchHref: `http://www.pluralsight.com/courses/${id}`,
-      authorId: event.authorId,
-      length: event.length,
-      category: event.category
-    })
+    Item: {
+      id: { S: id },
+      title: { S: body.title },
+      watchHref: { S: `http://www.pluralsight.com/courses/${id}` },
+      authorId: { S: body.authorId },
+      length: { S: body.length },
+      category: { S: body.category }
+    }
   };
+
+  try {
+    await client.send(new PutItemCommand(params));
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        id,
+        title: body.title,
+        watchHref: `http://www.pluralsight.com/courses/${id}`,
+        authorId: body.authorId,
+        length: body.length,
+        category: body.category
+      })
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify(err)
+    };
+  }
 };

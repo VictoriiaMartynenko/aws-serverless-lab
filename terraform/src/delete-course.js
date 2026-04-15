@@ -3,17 +3,27 @@ const { DynamoDBClient, DeleteItemCommand } = require("@aws-sdk/client-dynamodb"
 const client = new DynamoDBClient({ region: "eu-central-1" });
 
 exports.handler = async (event) => {
-  const command = new DeleteItemCommand({
+  const id = event.pathParameters ? event.pathParameters.id : event.id;
+
+  const params = {
     TableName: "cloudtech-dev-courses",
     Key: {
-      id: { S: event.id }
+      id: { S: id }
     }
-  });
-
-  await client.send(command);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ deleted: event.id })
   };
+
+  try {
+    await client.send(new DeleteItemCommand(params));
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Course deleted" })
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify(err)
+    };
+  }
 };
